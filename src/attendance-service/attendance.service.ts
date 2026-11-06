@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { Prisma, type Attendance } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -26,7 +26,7 @@ const include = { employee: { select: { employeeCode: true, fullName: true,
 
 @Injectable()
 export class AttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async create(input: unknown) {
     const p = object(input); const employeeId = id(p.employeeId); const photoPath = path(p.photoPath);

@@ -1,11 +1,11 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { AttendancePattern } from '../contracts/attendance.contract.js';
 import { AttendanceService } from './attendance.service.js';
 
 @Controller()
 export class AttendanceController {
-  constructor(private readonly service: AttendanceService) {}
+  constructor(@Inject(AttendanceService) private readonly service: AttendanceService) {}
   @MessagePattern(AttendancePattern.create) create(payload: unknown) { return this.service.create(payload); }
   @MessagePattern(AttendancePattern.today) today(payload: unknown) { return this.service.today(payload); }
   @MessagePattern(AttendancePattern.listByEmployee) listByEmployee(payload: unknown) { return this.service.listByEmployee(payload); }
