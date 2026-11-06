@@ -79,6 +79,8 @@ For compiled execution, run `pnpm build`, then run `pnpm start:attendance:prod` 
 
 Business HTTP endpoints are under `/api`: `/api/auth`, `/api/employees`, `/api/departments`, `/api/positions`, and `/api/attendances`. Requests use JWT and a per-session P-256 signature. The frontend generates the key pair; no backend signing secret is shipped to the browser. JSON and bodyless requests use proof `v1`; photo uploads use multipart proof `v2`, which includes a SHA-256 digest of the photo bytes. Photos are stored outside public assets and served only through authorized HTTP endpoints.
 
+For an ordered API walkthrough in Postman, import the two collections and follow the [Postman testing guide](postman/README.md). It includes photo fixtures, request-proof setup, and cleanup steps.
+
 ## Verification
 
 ```bash
@@ -87,6 +89,7 @@ pnpm test
 pnpm build
 pnpm exec prisma migrate status
 pnpm test:e2e
+pnpm test:postman:proof
 ```
 
 Migration status and E2E checks require the configured MySQL server. With MySQL, the seed, and both backend processes running, `pnpm test:auth:smoke` tests both roles and request proof. `pnpm test:domain:smoke` tests master data, attendance CRUD, photos, and access rules. Set `API_BASE_URL` to the HTTP API URL for either smoke test; the auth smoke defaults to `http://localhost:3000`, while the domain smoke defaults to `http://localhost:3100`. The domain smoke creates and removes synthetic records, so run it only against a development or disposable database.

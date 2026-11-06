@@ -1,0 +1,58 @@
+# Implementation Progress
+
+**Pembaruan 6 November 2026 (WIB).** [Audit awal](01-current-state-and-gap.md) adalah baseline sebelum implementasi. MySQL lokal kemudian tersedia; proses uji sementara dijalankan pada HTTP `:3100` dan TCP `:3101` agar tidak mengganggu proses pengguna pada port baku. Status di bawah membedakan source yang sudah ada dari acceptance criteria yang benar-benar diuji.
+
+**Keputusan pengguna, 6 November 2026:** uji pembuatan database kosong tidak lagi menjadi gerbang penyerahan. Akun MySQL aplikasi memang bukan akun root dan hanya memerlukan hak pada database yang telah disiapkan administrator. EV-11 dipertahankan sebagai riwayat audit, bukan pekerjaan yang harus diulang. Kriteria database dinilai melalui migrasi, koneksi, constraint, seed yang telah tersedia, dan alur API pada database terprovision.
+
+## Bukti yang dapat diulang
+
+| Bukti | Perintah / metode | Hasil dan batas |
+| --- | --- | --- |
+| EV-01 | `pnpm lint && pnpm test && pnpm build` di `absen-be` | Lulus pada audit terbaru; 8 file, 18 unit test termasuk JWT kedaluwarsa dan kompensasi foto pada hasil TCP tak pasti. Smoke tambahan terpisah pada EV-05/06/07/12. |
+| EV-02 | `pnpm lint && pnpm build && pnpm test:navigation` di `absen-fe` | Lulus; TypeScript/Vite membangun 52 modul dan 5 tes navigasi/dialog menahan tautan, browser Back, serta aksi logout saat form kotor; redirect sesi habis tetap berjalan. Helper dialog menahan fokus Tab, menutup dengan Escape, dan mengembalikan fokus. Perilaku browser diuji di EV-14/16. |
+| EV-03 | `pnpm exec prisma migrate status` di `absen-be` | Lulus lagi pada 6 Nov: satu migrasi terpasang dan schema up to date pada MySQL lokal yang telah terprovision. |
+| EV-04 | `pnpm test:e2e` di `absen-be` dengan MySQL lokal | Lulus: 1 e2e starter (health/database). |
+| EV-05 | `API_BASE_URL=http://localhost:3100 pnpm test:domain:smoke` | Lulus terhadap dua PID NestJS dan MySQL: create/update/status master, rollback duplicate code, invalid FK, filter/pagination, login dua role, CRUD attendance pemilik, foto/proof v2/ukuran, pembersihan foto lama, larangan HRD dan pemilik lain, race check-in, hari lampau, recheck-in. Fixture sintetis dibersihkan. |
+| EV-06 | Hentikan hanya proses TCP uji `:3101`, lalu `API_BASE_URL=http://localhost:3100 pnpm test:attendance:unavailable` | Lulus: attendance 503 terstruktur; login/master tetap 200. Proses TCP uji dipulihkan setelah tes. Belum menyimulasikan timeout **setelah commit**. |
+| EV-07 | `API_BASE_URL=http://localhost:3100 pnpm test:auth:smoke` dengan `SEED_DEMO_PASSWORD` disetel hanya di proses uji untuk seed demo lokal yang sudah ada | Lulus untuk ADMIN/EMPLOYEE, key binding, replay, signature hilang/kedaluwarsa. Kedua akun demo pada DB terprovision dapat digunakan. |
+| EV-08 | Browser lokal `:5174` dengan API proxy ke `:3100`; akun dan foto PNG sintetis dibuat lalu dibersihkan | HRD login dan membuat karyawan melalui UI-05; karyawan baru login, check-in foto melalui UI-02, mengganti foto tanpa mengubah jam, membuka detail pribadi; HRD membaca list/detail/foto tanpa aksi mutasi, filter pencarian bertahan setelah kembali dari detail; HRD menonaktifkan akun lewat dialog, login berikutnya ditolak. Toast login/logout/check-in/update/status dan keadaan kosong terlihat. Dialog hapus serta batal terlihat; hapus aktual dibuktikan pada EV-05 API. |
+| EV-09 | Parse JSON/compile pre-request script kedua koleksi serta `pnpm test:postman:proof` | Lulus ulang: proof v1 JSON dan v2 untuk dua fixture foto dari pre-request Postman lolos verifikasi P-256 terhadap kontrak canonical. Koleksi domain kini menggunakan identitas uji unik dan alur cleanup, tetapi belum dijalankan dalam aplikasi Postman. |
+| EV-10 | Query baca saja `information_schema.TABLES`, `REFERENTIAL_CONSTRAINTS`, dan `STATISTICS` pada MySQL lokal | Enam tabel ditemukan; lima FK beraturan `RESTRICT`; indeks unik email, kode, dan `(employee_id, attendance_date)` serta indeks pendukung tersedia pada DB terprovision. |
+| EV-11 | `pnpm test:setup:smoke` mencoba membuat database uji acak terisolasi saat audit sebelumnya | MySQL mengembalikan 1044; akun `absensi@localhost` hanya memiliki hak pada dua database yang telah terprovision. **Dikecualikan oleh pengguna pada 6 Nov; bukan blocker atau tes yang perlu diulang.** Database utama dan shadow tidak diubah. |
+| EV-12 | `pnpm photos:reconcile` dan `pnpm test:photos:reconcile` | Lulus pada MySQL lokal: baseline 0 kandidat; fixture yatim sintetis berumur 25 jam tetap ada pada report-only lalu dihapus oleh mode delete; fixture dibersihkan. |
+| EV-13 | Tes unit kompensasi di `absen-be/src/attendances/attendances.controller.spec.ts`; inspeksi UI hook/detail | Lulus: kegagalan 503 mempertahankan foto baru, kegagalan domain pasti membersihkannya. UI memuat ulang status/detail pada 503 atau jaringan putus dan tidak menampilkan sukses tanpa verifikasi. Belum ada fault injection TCP yang benar-benar commit lalu timeout. |
+| EV-14 | Browser lokal `:5174` dengan ADMIN seed; filter master dan form edit tanpa menyimpan | Lulus: filter tanpa hasil menampilkan keadaan kosong serta Reset; perubahan nama memicu dialog aplikasi saat Batal, browser Back, dan Keluar. Batal mempertahankan form; Setuju kembali ke daftar atau logout. Tidak ada perubahan data seed tersimpan. Uji update profil yang disimpan tetap terbuka. |
+| EV-15 | Browser lokal dengan viewport 375×812; hentikan proses TCP uji `:3101` dan buka monitoring | Login, daftar, dan form master tidak memiliki overflow horizontal; form menyusun field satu kolom. Monitoring menampilkan pesan layanan absensi tidak tersedia dan Coba lagi; daftar karyawan tetap memuat. Viewport direset dan proses uji dihentikan setelahnya. Belum menguji keyboard atau reduced motion secara langsung. |
+| EV-16 | Browser lokal `:5174` dengan ADMIN seed; ubah profil demo lalu pulihkan | Konflik email dengan akun HRD menampilkan error dekat field dan mempertahankan input. Nama profil tersimpan lalu dikembalikan ke `Demo Developer`; daftar memuat nilai akhir asli. Pada dialog form/status, Shift+Tab dan Tab berputar, Escape menutup, dan fokus kembali ke tombol Batal/Nonaktifkan. Tidak ada data demo yang dibiarkan berubah. |
+| EV-17 | Audit `package.json`, `.env.example`, konfigurasi Prisma/Vite, dan kedua README berbahasa Inggris; ulang `pnpm exec prisma migrate status` | README mandiri untuk dua repo, tanpa tautan lintas repo; perintah dan default port cocok source. Migrasi status lulus pada DB terprovision. `pnpm exec prisma generate` pada workspace aktif gagal `EPERM` saat Node pengguna masih mendengarkan port `:3000`; proses tersebut berpotensi mengunci DLL Prisma. Instruksi berhenti proses sebelum generate telah ditambahkan. Setup dari clone baru belum didemokan. |
+
+Bukti API ada dalam [domain smoke](../../absen-be/test/domain.smoke.mjs), [outage smoke](../../absen-be/test/attendance-unavailable.smoke.mjs), dan tes unit di `absen-be/src/**/*.spec.ts`. Jangan menaruh credential, token, atau foto pribadi di dokumen bukti.
+
+## Status task
+
+| Task | Status | Perubahan / bukti | Gap berikutnya |
+| --- | --- | --- | --- |
+| IMP-001–003 | Completed | PDF, source, kontrak dan docs 01–05 diaudit; DG/FR/AC dipetakan; kontrak foto v2 dan CRUD pemilik didokumentasikan sebelum kode. | Audit tautan akhir. |
+| IMP-004 | Completed sesuai scope revisi | EV-03/04/05/07/10 memverifikasi DB terprovision, migrasi, enam tabel, FK, indeks, koneksi, dan akun demo. Uji DB kosong EV-11 dikecualikan oleh pengguna. | — |
+| IMP-005 | Completed untuk auth | EV-07 lulus dengan script env; EV-05/08 menguji login dua role dan nonaktif; EV-01 menguji JWT kedaluwarsa dengan pustaka JWT nyata. | — |
+| IMP-006–008 | Completed | Dua proses, lookup aktif, transaksi employee, role/status, filter. EV-01/05/06. | — |
+| IMP-009 | Completed | EV-05/08/14/16: list, form create/update tersimpan, konflik email dekat field, dan profil demo dipulihkan. | — |
+| IMP-010 | Partially Implemented | EV-05/08/14/16: filter master tanpa hasil, status akun, notifikasi, dan konfirmasi meninggalkan form lulus. Layout master 375 px lulus EV-15. | Pagination master lebih dari satu halaman dan konflik kode dekat field belum diuji di browser. |
+| IMP-011–017 | Completed | Nest TCP, adapter, aturan WIB/unique/pemilik, foto privat, proof v2. EV-01/05/06. | — |
+| IMP-018 | Partially Implemented | EV-05 membuktikan akses foto/cleanup setelah replace/delete; EV-12 membuktikan rekonsiliasi report/delete untuk fixture yatim; EV-13 membuktikan aturan kompensasi dengan proxy simulasi. | Timeout setelah kemungkinan commit belum teruji pada TCP/DB nyata. |
+| IMP-019–020 | Partially Implemented | EV-08 memverifikasi browser check-in foto, status, detail, replace dan riwayat kosong; UI-03 kini menampilkan indikator foto/pagination. EV-05 membuktikan delete dan recheck-in API. EV-13 menambah pemeriksaan status/detail setelah kegagalan mutasi tak pasti. | Hapus aktual dari UI, pemulihan 503 di browser, dan pagination dengan lebih dari satu halaman belum diuji. |
+| IMP-021–022 | Partially Implemented | EV-02/08/14/15/16 memverifikasi monitoring data terisi, detail/foto baca saja, filter bertahan setelah kembali, toast, dialog, filter master kosong, layout mobile 375 px, dan 503 monitoring. Keyboard dialog lulus di browser. | Reduced motion dan variasi kegagalan UI lain belum diuji. |
+| IMP-023 | Partially Implemented | EV-01/02/05/06/07/08/15. | Uji regresi browser penuh, JWT expiry di browser, timeout setelah commit. |
+| IMP-024 | Partially Implemented | README Inggris mandiri untuk kedua repo dan variabel/command diverifikasi EV-17; koleksi Postman auth/domain diperbarui untuk alur uji berurutan, identitas unik, fixture foto/hash, dan cleanup. Proof EV-09 lulus. | Jalankan koleksi pada Postman dan ulang setup dari clone baru dengan DB yang sudah terprovision; hentikan API sebelum `prisma generate` pada Windows. |
+| IMP-025 | Partially Implemented | EV-08 membuktikan demo browser HRD create → employee login/check-in/foto → HRD monitoring → HRD nonaktif → login ditolak; EV-05/06 membuktikan CRUD API dan service mati. | Hapus aktual dari UI, fault injection timeout setelah commit, serta Postman aktual belum diuji. |
+| IMP-026 | In Progress | Docs sinkron dan checklist mulai diisi berdasarkan EV. | Audit final tautan, secret, bukti, serta keputusan penyerahan. |
+
+## Risiko dan langkah berikutnya
+
+1. Reviewer menyiapkan database utama dan shadow dengan administrator, lalu mengikuti README backend/frontend dari clone masing-masing. Uji membuat database baru memakai akun aplikasi telah dikecualikan; jangan meminta hak global `CREATE/DROP` demi uji itu. Pada Windows, hentikan proses backend sebelum `prisma generate`.
+2. Selesaikan uji hapus dan check-in ulang melalui UI serta pagination riwayat/master dengan data lebih dari satu halaman (IMP-010/019/020/025). Demo inti dua role lulus EV-08; filter master serta prompt form lulus EV-14; update profil/konflik email lulus EV-16.
+3. Uji reduced motion dan penanganan timeout setelah commit pada TCP/DB nyata (IMP-018/022/023/025). Layout mobile 375 px serta UI 503 monitoring lulus EV-15; keyboard dialog lulus EV-16; tes unit EV-13 hanya membuktikan kebijakan kompensasi.
+4. Jalankan koleksi dalam aplikasi Postman, cocokkan semua `DG-*` dengan bukti, dan selaraskan versi dokumentasi antar-repo saat alamat repositori organisasi tersedia. `docs/` dan `postman/` saat ini berada di `absen-be`; README masing-masing repo sudah mandiri.
+
+Status `Partially Implemented` atau `Needs Verification` tidak berarti fitur absen dari source; berarti acceptance criteria task belum memiliki bukti lengkap. [Checklist operasional](../CHECKLIST_IMPLEMENTASI_DEXA.md) tidak boleh dicentang untuk gap tersebut.
+

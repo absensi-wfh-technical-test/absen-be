@@ -1,0 +1,122 @@
+# Checklist Implementasi dan Verifikasi — Dexa Group
+
+**Tujuan:** gerbang audit sebelum aplikasi absensi WFH diserahkan atau didemokan. Dokumen ini memeriksa tuntutan technical test, keputusan arsitektur yang disepakati, dan fitur pelengkap yang tercatat dalam dokumentasi proyek. **Audit berjalan 6 November 2026:** kotak yang dicentang memiliki bukti pada tabel di bawah; gerbang penyerahan masih terbuka.
+
+Sumber requirement tes adalah [PDF Dexa Group](%2850%29%20Dexa%20Group%20-%20Fullstack%20Web%20Technical%20Test.pdf), ringkasan pada [analisis bisnis](01-business-analysis/01-konteks-dan-lingkup.md), dan [PRD](04-product-management/01-kebutuhan-produk.md). PDF sudah tersedia kembali di workspace; jangan menganggap butir **[Keputusan]** atau **[Rancangan]** sebagai kalimat dari PDF. Detail perilaku dan bukti penerimaan dirujuk dari [aturan bisnis](01-business-analysis/02-aturan-bisnis-dan-use-case.md), [kriteria penerimaan](04-product-management/02-rencana-dan-penerimaan.md), [arsitektur solusi](02-solution-architecture/01-arsitektur-solusi.md), [kontrak API](02-solution-architecture/02-kontrak-api-dan-keamanan.md), [arsitektur data](03-data-architecture/01-model-dan-kamus-data.md), [arsitektur frontend](02-solution-architecture/03-arsitektur-frontend.md), dan [spesifikasi UI](05-ui-ux-design/02-spesifikasi-layar.md).
+
+## Cara menggunakan
+
+1. Centang butir **hanya setelah** kode, perilaku berjalan, dan bukti pengujian atau demo diperiksa. Keberadaan skema, dokumen, atau endpoint yang belum diuji belum cukup.
+2. Catat bukti per ID di [tabel bukti](#catatan-bukti-dan-temuan): perintah/hasil tes, respons API, screenshot, commit, atau langkah demo yang dapat diulang. Jika gagal, biarkan kosong dan tulis temuannya.
+3. Label **[Tes]** adalah requirement/objective PDF; **[Keputusan]** adalah pilihan arsitektur MVP; **[Rancangan P0/P1]** adalah rincian produk tambahan. P1 tidak boleh dilaporkan sebagai kewajiban eksplisit PDF. Jika P1 tidak dikerjakan, catat sebagai *ditunda* beserta alasannya, bukan dicentang.
+4. Jika implementasi menyimpang dari dokumentasi, perbarui keputusan dan dokumen terkait sebelum menandai checklist selesai. Label `FR-*`, `BR-*`, `AC-*`, dan `UI-*` mengacu pada dokumen yang ditautkan di atas.
+
+## A. Kewajiban technical test — [Tes]
+
+- [x] **T-01 — Stack backend dan frontend.** Backend memakai JavaScript/TypeScript dengan NestJS; frontend web memakai React. Keduanya dapat dijalankan dan dibangun dari instruksi repo. **Jejak:** objective backend/frontend pada analisis bisnis.
+- [x] **T-02 — Database dan API.** Struktur database yang tepat dibuat dan koneksi aplikasi berfungsi; API dapat membaca serta memanipulasi data. Demonstrasikan operasi CRUD pada sumber daya yang sesuai, atau catat secara terbuka gap terhadap objective CRUD bila penghapusan fisik tidak disediakan. Absensi HRD tetap *view only*. **Jejak:** objective backend, `FR-02`, `FR-03`, `BR-07`–`BR-11`.
+- [x] **T-03 — Login karyawan.** Akun aktif dapat login dan identitas/role terbaca; kredensial salah atau akun nonaktif ditolak tanpa mengeluarkan token valid. **Jejak:** `FR-01`, `BR-01`, `BR-02`, `AC-01`, `AC-02`.
+- [x] **T-04 — Hak akses.** Karyawan tidak dapat membaca/mengubah data HRD atau mengirim absensi atas nama karyawan lain; API menolak akses lintas role, bukan sekadar menyembunyikan menu. **Jejak:** `FR-01`, `BR-03`, `AC-03`.
+- [x] **T-05 — Master karyawan HRD.** HRD dapat menambah dan memperbarui profil karyawan; user dan employee dibuat konsisten, email/kode unik, relasi departemen/jabatan valid, dan hash password tidak keluar di respons. Kegagalan tidak meninggalkan data parsial. **Jejak:** `FR-02`, `FR-03`, `BR-08`, `BR-10`, `BR-11`, `AC-04`, `AC-05`.
+- [x] **T-06 — Check-in WFH.** Karyawan login dapat mengirim foto bukti; sistem mencatat tanggal dan waktu dari server serta menampilkan hasil tersimpan. Foto kosong/invalid ditolak tanpa membuat catatan absensi. **Jejak:** `FR-04`, `BR-04`, `BR-05`, `AC-06`, `AC-08`.
+- [x] **T-07 — Monitoring HRD baca saja.** HRD dapat melihat absensi yang dikirim beserta tanggal, jam, karyawan, dan foto. Tidak ada aksi atau endpoint HRD untuk mengubah/menghapus absensi. **Jejak:** `FR-05`, `BR-07`, `AC-09`, `AC-14`.
+- [x] **T-08 — Frontend fungsional.** Halaman/screen untuk dua aktor tersedia, memanggil HTTP API nyata, dan menggunakan komponen React yang dibuat untuk aplikasi; alur inti tidak berhenti pada mock atau starter Vite. **Jejak:** objective frontend, `UI-01`–`UI-07`.
+- [x] **T-09 — Konsep microservices dapat didemonstrasikan.** Operasi absensi melintasi dua proses NestJS melalui komunikasi internal, bukan hanya dua folder/module dalam satu proses. Rincian keputusan proyek diperiksa pada bagian B. **Jejak:** objective backend tentang microservices, `FR-11`, `AC-14`.
+
+## B. Keputusan arsitektur dan integritas MVP — [Keputusan]
+
+- [x] **K-01 — Dua proses dan batas jaringan.** HTTP API modular `:3000` dan Attendance Microservice Nest TCP `:3001` berjalan terpisah; React hanya memanggil HTTP API `/api`, dan port TCP tidak menjadi endpoint publik. **Jejak:** `FR-11`, `AC-14`, arsitektur solusi.
+- [x] **K-02 — Modul dan kontrak TCP.** HTTP API mengelola auth, employees, departments, positions, upload/proxy; `ClientProxy.send()` berpasangan dengan `@MessagePattern()` untuk `attendance.create`, `attendance.listByEmployee`, dan `attendance.list`. Payload internal divalidasi. **Jejak:** `FR-11`, `AC-06`, `AC-14`, kontrak API.
+- [x] **K-03 — Shared database dengan ownership jelas.** Kedua proses memakai satu MySQL/Prisma untuk MVP; hanya Attendance Microservice menulis `attendances`, sedangkan HTTP API mengelola akun/master. Migrasi kompatibel dengan kedua proses; tidak ada klaim database-per-service. **Jejak:** arsitektur solusi dan arsitektur data.
+- [x] **K-04 — Enam tabel dan constraint.** `roles`, `users`, `departments`, `positions`, `employees`, `attendances` tersedia dari migrasi; FK, indeks, uniqueness email/kode, `onDelete: Restrict`, dan pasangan unik `employee_id + attendance_date` diverifikasi pada database nyata. **Jejak:** `BR-06`, `BR-09`–`BR-11`, `AC-07`, arsitektur data.
+- [x] **K-05 — Auth dan status aktif.** JWT, hash password, role `ADMIN`/`EMPLOYEE`, pemeriksaan `User.isActive` dan `Employee.isActive`, serta penolakan request tak berizin bekerja di backend. **Jejak:** `FR-01`, `BR-01`–`BR-03`, `AC-01`–`AC-03`.
+- [x] **K-06 — Waktu dan keunikan absensi.** Microservice membuat satu timestamp server, menghitung `attendanceDate` dalam `Asia/Jakarta`, menerapkan konvensi UTC untuk timestamp, serta menangani dua request bersamaan melalui unique constraint dengan respons konflik yang jelas. **Jejak:** `FR-06`, `BR-05`, `BR-06`, `AC-07`.
+- [x] **K-07 — Foto dan privasi.** HTTP API memvalidasi tipe/ukuran foto, menyimpan berkas lokal dengan nama aman di lokasi privat, mengirim `photoPath` internal ke microservice, dan menyajikannya hanya kepada pemilik/ADMIN setelah otorisasi. Browser tidak menerima path internal. **Jejak:** `BR-04`, `BR-12`, `AC-08`, `AC-10`.
+- [ ] **K-08 — Kegagalan lintas proses.** TCP timeout/service mati menghasilkan error terstruktur dalam batas waktu; login/master tetap berjalan. Foto baru dibersihkan pada kegagalan pasti, sedangkan hasil check-in yang belum pasti diperiksa sebelum retry/cleanup. **Jejak:** `FR-11`, `AC-13`, arsitektur solusi.
+- [ ] **K-09 — Setup data awal pada DB terprovision.** `DATABASE_URL`/`SHADOW_DATABASE_URL` terdokumentasi tanpa secret; migrasi dan Prisma Client dapat disiapkan melalui pnpm; seed membuat role `ADMIN`/`EMPLOYEE`, master departemen/jabatan, dan akun demo dengan password di-hash. Uji membuat database baru memakai akun aplikasi dikecualikan oleh pengguna. **Jejak:** `FR-10`, arsitektur data, rencana penerimaan.
+
+## C. Rancangan pelengkap dan keputusan produk — bukan kewajiban eksplisit PDF
+
+- [ ] **P-01 — Status dan riwayat sendiri [Rancangan P1].** Karyawan dapat melihat status hari ini, riwayat, dan hanya detail/foto miliknya; setelah timeout UI memeriksa status sebelum mengirim ulang. **Jejak:** `FR-07`, `BR-03`, `AC-10`, `UI-02`, `UI-03`, `UI-07`.
+- [ ] **P-02 — Pencarian dan filter [Rancangan P1].** HRD dapat mencari/filter karyawan dan absensi, melihat detail, serta memakai pagination/keadaan tanpa hasil yang sesuai. **Jejak:** `FR-08`, `AC-09`, `AC-12`, `UI-04`, `UI-06`.
+- [x] **P-03 — Penonaktifan tanpa menghapus histori [Rancangan P1].** HRD dapat menonaktifkan user dan employee secara konsisten; login/check-in berikutnya ditolak dan riwayat tetap ada. **Jejak:** `FR-09`, `BR-02`, `BR-09`, `AC-11`.
+- [x] **P-04 — Master pilihan form [Rancangan P1].** Departemen dan jabatan aktif tersedia untuk form karyawan; ID tidak dikenal atau nonaktif ditolak. **Jejak:** `FR-10`, `BR-11`, `AC-05`.
+- [ ] **P-05 — Keadaan UI [Rancangan P1].** Layar yang relevan menampilkan loading, kosong, error, berhasil, akses ditolak, sesi habis, dan service absensi tidak tersedia dengan langkah pemulihan. Periksa notifikasi login/logout pada route tujuan, konfirmasi persisten untuk hasil penting, transisi singkat, dan aksesibilitas sesuai [spesifikasi interaksi](05-ui-ux-design/03-umpan-balik-interaksi-dan-sistem-visual.md). **Jejak:** `AC-12`, `AC-13`, `UI-01`–`UI-08`.
+- [x] **P-06 — Signature request auth [Keputusan proyek; bukan syarat PDF].** Login, `/me`, dan logout hanya berhasil dengan signature P-256 yang mengikat method, target, timestamp, nonce, dan digest body; JWT terikat ke public key yang sama. Periksa key lain, timestamp kedaluwarsa, replay, body berubah, dan signature hilang. Private key tidak diekspor dari React; endpoint domain tidak diklaim terlindungi sebelum guard diterapkan. **Jejak:** [kontrak signature](02-solution-architecture/04-evaluasi-signature-request.md#kontrak-yang-dipilih-untuk-endpoint-autentikasi).
+- [x] **P-07 — CRUD absensi pemilik [Keputusan proyek P1].** Karyawan hanya dapat mengganti foto atau menghapus absensi miliknya pada tanggal bisnis yang sama; waktu asli tetap saat ganti foto, dan check-in ulang boleh setelah hapus. HRD tetap baca saja. Bukti CREATE/READ/UPDATE/DELETE API dikaitkan dengan objective CRUD PDF tanpa mengklaim mutasi HRD sebagai kewajiban tes. **Jejak:** `FR-12/13`, `BR-14/15`, `AC-15/16`, `UI-02/07`.
+
+## D. Layar dan organisasi frontend
+
+- [x] **F-01 — Login.** `UI-01` memiliki input, validasi, error aman, dan redirect sesuai role; diuji melalui API nyata. **Jejak:** `FR-01`, `AC-01`, `AC-02`.
+- [ ] **F-02 — Beranda/check-in.** `UI-02` memperlihatkan status hari ini, pilih/pratinjau foto, submit, konfirmasi waktu server, duplikat, dan kegagalan upload/TCP. **Jejak:** `FR-04`, `FR-06`, `AC-06`–`AC-08`.
+- [x] **F-03 — Riwayat dan detail pribadi [Rancangan P1].** `UI-03` dan varian pemilik `UI-07` hanya menampilkan absensi akun sendiri. **Jejak:** `FR-07`, `AC-10`.
+- [x] **F-04 — Master HRD.** `UI-04` dan `UI-05` menyediakan daftar, tambah, ubah, validasi konflik, dan status aktif sesuai cakupan rilis. **Jejak:** `FR-02`, `FR-03`, `FR-09`, `AC-04`, `AC-05`, `AC-11`.
+- [x] **F-05 — Monitoring HRD.** `UI-06` dan varian ADMIN `UI-07` menampilkan daftar/detail/foto tanpa tombol edit/hapus absensi. **Jejak:** `FR-05`, `FR-08`, `AC-09`, `AC-14`.
+- [ ] **F-06 — Keadaan sistem.** `UI-08` menangani 401/403/404/503 serta hasil check-in yang belum pasti tanpa memberi klaim sukses palsu. **Jejak:** `AC-03`, `AC-12`, `AC-13`.
+- [x] **F-07 — Arsitektur feature-based [Rancangan].** Kode `auth`, `attendance`, dan `employees` terkolokasi; service HTTP, custom hook, tipe, halaman, komponen, dan style fitur berada pada pemiliknya. Kode bersama hanya berisi kebutuhan lintas fitur. **Jejak:** arsitektur frontend.
+- [x] **F-08 — Alias dan konvensi [Rancangan].** Alias `@/` berfungsi di TypeScript dan Vite; komponen `PascalCase`, hooks/services/utils `camelCase`, style fitur `kebab-case.module.css`; tidak ada impor langsung ke internal fitur lain. **Jejak:** arsitektur frontend.
+- [ ] **F-09 — Integrasi dan aksesibilitas [Rancangan].** React hanya memanggil `/api`; route guard tidak menggantikan RBAC backend; layar inti responsif, dapat dipakai dengan keyboard, dan memberi label serta pesan error yang jelas. **Jejak:** arsitektur frontend, navigasi dan spesifikasi UI.
+
+## E. Pengujian, keamanan, dan penyerahan
+
+- [x] **R-01 — Uji unit/domain.** Tanggal bisnis dekat tengah malam WIB, pemetaan role, validasi foto, dan aturan murni yang penting memiliki tes bermakna. **Jejak:** rencana penerimaan.
+- [x] **R-02 — Uji integrasi DB/API/TCP.** Transaksi user–employee, unique attendance saat request bersamaan, 401/403, filter/pagination, akses foto lintas pemilik, dan service TCP mati telah diuji. Timeout setelah commit tetap menjadi gap K-08. **Jejak:** `AC-03`–`AC-14`.
+- [x] **R-03 — Demo end-to-end.** Dua proses NestJS dan React hidup: ADMIN membuat karyawan → karyawan login/check-in dengan foto → ADMIN melihat absensi/foto → karyawan dinonaktifkan → akses berikutnya ditolak. **Jejak:** `AC-04`, `AC-06`, `AC-09`, `AC-11`, `AC-14`.
+- [x] **R-04 — Build dan pemeriksaan kode.** Build/lint/tes yang tersedia pada `absen-fe` dan `absen-be` lulus pada commit yang akan diserahkan; tidak ada hasil tes yang hanya diklaim tanpa output. **Jejak:** definition of done pada rencana penerimaan.
+- [x] **R-05 — Keamanan data.** Tidak ada password, JWT secret, kredensial DB, atau isi/path privat foto di repo, respons publik, dan log; `.env.example` hanya berisi placeholder; endpoint foto dan TCP memiliki batas akses sesuai rancangan. **Jejak:** kontrak API dan arsitektur solusi.
+- [ ] **R-06 — Setup reviewer.** README Inggris mandiri di tiap repo memuat perintah pnpm yang benar-benar ada untuk instalasi, migrasi/generate/seed pada database yang sudah disiapkan administrator, menjalankan HTTP API + microservice + frontend, dan akun demo tanpa secret nyata. Reviewer dapat mengulang langkah dari clone masing-masing. **Jejak:** paket demo pada rencana penerimaan.
+- [x] **R-07 — Bukti penerimaan.** Hasil tes, screenshot/respons API, serta gap atau fitur P1 yang ditunda dicatat di bawah; tidak ada kotak dicentang hanya berdasarkan dokumentasi. **Jejak:** seluruh `FR-01`–`FR-11`, `AC-01`–`AC-14`, `UI-01`–`UI-08`.
+
+## Catatan bukti dan temuan
+
+Tambahkan satu baris untuk **setiap ID yang dicentang**. Gunakan tautan commit/PR, path artefak tes, perintah beserta hasilnya, atau langkah demo yang dapat diulang. Hindari menaruh token, password, dan foto pribadi di tabel ini.
+
+| ID checklist | Bukti yang dapat diperiksa | Pemeriksa dan tanggal | Temuan / tindak lanjut |
+| --- | --- | --- | --- |
+| T-01 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-01/02/08 — build dan lint kedua aplikasi lulus; Vite dan dua proses NestJS berjalan. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| T-02 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-03/05/10 — koneksi MySQL, enam tabel, constraint, dan CRUD absensi pemilik teruji. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| T-03 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05/07/08 — login dua role, kredensial salah, akun nonaktif, profil tanpa hash. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| T-04 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 — 403/401 untuk karyawan pada master, pemilik lain, dan HRD pada mutasi absensi. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| T-05 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 — create/update/status, duplikat email/kode, rollback user, relasi invalid, tanpa hash. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| T-06 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 — upload foto valid/invalid/besar, waktu server, hasil tersimpan dan unik harian. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| T-07 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 — list/detail/foto bagi ADMIN; PATCH/DELETE ADMIN ditolak 403. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| T-09 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05/06 — dua PID NestJS HTTP/TCP; operasi domain melalui request-response dan fallback 503. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| K-01 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05/06 — HTTP :3100 dan TCP :3101 terpisah saat uji; FE hanya HTTP /api. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| K-02 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 — pola attendance.create/listByEmployee/list dan payload tervalidasi. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| K-03 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 serta inspeksi source — hanya service TCP menulis attendance; satu MySQL/Prisma. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| K-04 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-10 — enam tabel, lima FK RESTRICT, unique email/kode/tanggal karyawan, indeks. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| K-05 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05/07 — JWT, hash, role, user/employee aktif dan penolakan token setelah nonaktif. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| K-06 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-01/05 — unit WIB dekat tengah malam dan race check-in 201/409. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| K-07 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 — tipe/ukuran foto, path privat tidak di respons, akses owner/ADMIN, 403 lintas pemilik. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| P-03 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 — status user dan employee nonaktif; token lama dan login baru ditolak. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| P-04 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 — lookup aktif, departemen tak dikenal ditolak saat create. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| P-06 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-01/05/07 — proof v1/v2, key binding, replay, timestamp, bytes foto berubah ditolak. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| P-07 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 — create/read/replace/delete pemilik hari sama, waktu asli tetap, recheck-in; ADMIN 403. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| F-01 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05/07/08 — UI login dua role, API nyata, redirect dan error kredensial teruji API. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| F-07 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-02/08 dan inspeksi source — auth/attendance/employees memiliki halaman, hook, service, tipe. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| F-08 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-02 dan inspeksi source — alias TypeScript/Vite terbangun, penamaan modul konsisten. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| R-01 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-01/13 — 18 tes unit termasuk WIB, proof, ownership, validasi foto, JWT kedaluwarsa, dan kompensasi foto. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| R-02 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05/06 — transaksi, unique race, 401/403, filter/page, foto, service mati. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| R-04 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-01/02/04/05 — build/lint/unit/e2e/smoke dan tes navigasi frontend lulus pada workspace ini. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| R-05 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05 dan audit source/gitignore — credential .env serta foto privat di-ignore; respons tanpa path/hash; TCP loopback. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| T-08 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-02/08 — React login, HRD create, employee check-in/replace, HRD monitoring memakai HTTP API nyata. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| F-03 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05/08 — riwayat kosong dan detail pribadi teruji di browser; API menolak akses lintas pemilik. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| F-05 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05/08 — HRD melihat daftar/detail/foto terisi; UI tanpa mutasi dan API mutasi 403. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| F-04 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-05/08/14/16 — create/update/status master, konflik email dekat field, filter kosong, dan pemulihan data demo. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; pagination banyak halaman tetap gap P-02. |
+| R-03 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-08 — demo browser HRD create → employee login/check-in/foto → HRD monitoring → nonaktif → login ditolak. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| R-07 | [EV di progres](06-implementation-planning/07-implementation-progress.md): EV-01–17 dan matriks FR-01–13/AC-01–16; gap terbuka dan pengecualian DB kosong dicatat, kotak lain tetap kosong. | Codex, 6 Nov 2026 WIB | Lulus pada lingkungan lokal; batas bukti lihat progres. |
+| WAIVER | [EV-11 dan keputusan pengguna](06-implementation-planning/07-implementation-progress.md): uji akun aplikasi membuat database kosong dikecualikan. | Pengguna, 6 Nov 2026 WIB | Administrator menyediakan DB utama/shadow; tidak perlu hak global CREATE/DROP pada akun aplikasi. |
+| GAP | [Progres terbuka](06-implementation-planning/07-implementation-progress.md): IMP-010/018/019/020/022/024/025 | Codex, 6 Nov 2026 WIB | Hapus/recheck-in melalui UI, pagination banyak halaman, timeout setelah commit, reduced motion, dan Postman aktual belum terverifikasi. Setup dari clone baru pada DB terprovision juga belum didemokan. |
+
+## Keputusan penyerahan
+
+- [x] Semua butir **[Tes]** pada bagian A lulus pada lingkungan lokal, termasuk objective CRUD dan demonstrasi microservices; gap tambahan yang masih ada dinyatakan terbuka pada tabel.
+- [ ] Semua keputusan arsitektur pada bagian B yang dikomitmenkan untuk MVP lulus.
+- [ ] Seluruh acceptance criteria P0 yang terkait telah diuji; status `FR-01`–`FR-11` dan `AC-01`–`AC-14` dapat ditelusuri melalui bukti.
+- [ ] Setiap butir **[Rancangan P1]** yang belum dikerjakan tercatat sebagai *ditunda* dengan alasan dan dampak; tidak dilaporkan sebagai requirement eksplisit PDF.
+- [ ] Tidak ada defect kritis terbuka; langkah setup reviewer dan demo end-to-end berhasil pada versi yang akan diserahkan.
+
+**Putusan akhir (pilih satu setelah audit):**
+
+- [ ] **Siap diserahkan** — semua gerbang wajib di atas terpenuhi dan bukti tersedia.
+- [x] **Belum siap diserahkan** — tulis blocker dan penanggung jawabnya pada tabel bukti/temuan.
