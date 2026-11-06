@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ==========================================
+// 1. ROLE
+// ==========================================
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(30)
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users User[]
+
+  @@map("roles")
+}
+
+// ==========================================
+// 2. USER (AUTHENTICATION)
+// ==========================================
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique @db.VarChar(191)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  roleId       Int      @map("role_id")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  role     Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  employee Employee?
+
+  @@index([roleId])
+  @@map("users")
+}
+
+// ==========================================
+// 3. DEPARTMENT
+// ==========================================
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(30)
+  name      String   @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  employees Employee[]
+
+  @@map("departments")
+}
+
+// ==========================================
+// 4. POSITION
+// ==========================================
+
+model Position {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(30)
+  name      String   @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  employees Employee[]
+
+  @@map("positions")
+}
+
+// ==========================================
+// 5. EMPLOYEE
+// ==========================================
+
+model Employee {
+  id           Int       @id @default(autoincrement())
+  employeeCode String    @unique @map("employee_code") @db.VarChar(30)
+  fullName     String    @map("full_name") @db.VarChar(150)
+  userId       Int       @unique @map("user_id")
+  departmentId Int       @map("department_id")
+  positionId   Int       @map("position_id")
+  phoneNumber  String?   @map("phone_number") @db.VarChar(20)
+  hireDate     DateTime? @map("hire_date") @db.Date
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  department  Department   @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  position    Position     @relation(fields: [positionId], references: [id], onDelete: Restrict)
+  attendances Attendance[]
+
+  @@index([departmentId])
+  @@index([positionId])
+  @@index([fullName])
+  @@map("employees")
+}
+
+// ==========================================
+// 6. ATTENDANCE
+// ==========================================
+
+model Attendance {
+  id             Int      @id @default(autoincrement())
+  employeeId     Int      @map("employee_id")
+  attendanceDate DateTime @map("attendance_date") @db.Date
+  checkInAt      DateTime @map("check_in_at") @db.DateTime(3)
+  photoPath      String   @map("photo_path") @db.VarChar(500)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, attendanceDate])
+  @@index([attendanceDate, checkInAt])
+  @@map("attendances")
+}
