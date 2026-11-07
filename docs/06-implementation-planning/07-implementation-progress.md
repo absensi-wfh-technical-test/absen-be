@@ -2,6 +2,8 @@
 
 **Pembaruan 6 November 2026 (WIB).** [Audit awal](01-current-state-and-gap.md) adalah baseline sebelum implementasi. MySQL lokal kemudian tersedia; proses uji sementara dijalankan pada HTTP `:3100` dan TCP `:3101` agar tidak mengganggu proses pengguna pada port baku. Status di bawah membedakan source yang sudah ada dari acceptance criteria yang benar-benar diuji.
 
+**Pembaruan 7 November 2026 (WIB):** frontend diberi aturan format Prettier, sesi JWT/kunci P-256 persisten di IndexedDB, filter berjarak, dan arah visual *operational workspace*. Bukti baru EV-18 di bawah berlaku untuk perubahan ini; verifikasi browser setelah login pada seluruh lebar layar tetap dicatat terpisah sampai benar-benar dilakukan.
+
 **Keputusan pengguna, 6 November 2026:** uji pembuatan database kosong tidak lagi menjadi gerbang penyerahan. Akun MySQL aplikasi memang bukan akun root dan hanya memerlukan hak pada database yang telah disiapkan administrator. EV-11 dipertahankan sebagai riwayat audit, bukan pekerjaan yang harus diulang. Kriteria database dinilai melalui migrasi, koneksi, constraint, seed yang telah tersedia, dan alur API pada database terprovision.
 
 ## Bukti yang dapat diulang
@@ -25,8 +27,11 @@
 | EV-15 | Browser lokal dengan viewport 375×812; hentikan proses TCP uji `:3101` dan buka monitoring | Login, daftar, dan form master tidak memiliki overflow horizontal; form menyusun field satu kolom. Monitoring menampilkan pesan layanan absensi tidak tersedia dan Coba lagi; daftar karyawan tetap memuat. Viewport direset dan proses uji dihentikan setelahnya. Belum menguji keyboard atau reduced motion secara langsung. |
 | EV-16 | Browser lokal `:5174` dengan ADMIN seed; ubah profil demo lalu pulihkan | Konflik email dengan akun HRD menampilkan error dekat field dan mempertahankan input. Nama profil tersimpan lalu dikembalikan ke `Demo Developer`; daftar memuat nilai akhir asli. Pada dialog form/status, Shift+Tab dan Tab berputar, Escape menutup, dan fokus kembali ke tombol Batal/Nonaktifkan. Tidak ada data demo yang dibiarkan berubah. |
 | EV-17 | Audit `package.json`, `.env.example`, konfigurasi Prisma/Vite, dan kedua README berbahasa Inggris; ulang `pnpm exec prisma migrate status` | README mandiri untuk dua repo, tanpa tautan lintas repo; perintah dan default port cocok source. Migrasi status lulus pada DB terprovision. `pnpm exec prisma generate` pada workspace aktif gagal `EPERM` saat Node pengguna masih mendengarkan port `:3000`; proses tersebut berpotensi mengunci DLL Prisma. Instruksi berhenti proses sebelum generate telah ditambahkan. Setup dari clone baru belum didemokan. |
+| EV-18 | `pnpm format:check`, `pnpm lint`, `pnpm test:navigation`, `pnpm test:auth`, `pnpm build` di `absen-fe`; Chrome lokal pada 320/375/768/1280 px | Semua perintah lulus: 5 tes navigasi dan 11 tes sesi, termasuk reload/remount, JWT `exp`, key hilang, 401, retry jaringan, storage ditolak, logout lintas tab, race logout dengan `/me` tertunda, dan proof setelah pemulihan. Login tidak overflow horizontal pada 320 px; visual login diperiksa di empat lebar. |
+| EV-19 | Browser Chrome dengan ADMIN seed, Vite `:5173` → HTTP `:3100` → TCP `:3101`, DB health `ok` | Refresh dan buka ulang tab mempertahankan route HRD setelah `/me`, tanpa kilatan login/toast palsu. Logout tab pertama mengarahkan tab kedua ke login. Monitoring diperiksa pada 320/375/768/1280 px; filter berjarak 20 px pada dua/empat kolom dan satu kolom di ponsel. Daftar, form, dan detail/foto HRD diperiksa pada 320 px, tanpa overflow horizontal setelah menghapus `body` min-width. Tidak mengubah data DB. Restart proses browser penuh, layar karyawan, dan reduced motion belum diuji. |
+| EV-20 | Browser Chrome dengan EMPLOYEE seed pada API nyata; `pnpm test:ui` di `absen-fe`; pemeriksaan kontras/fokus | Beranda diperiksa pada 320/375/768/1280 px, riwayat pada 320/768 px, detail/foto pada 320/1280 px, tanpa overflow. Refresh pada detail memulihkan JWT/kunci dan memuat foto privat tanpa login/toast palsu. Detail tanggal lampau tidak menampilkan aksi mutasi. Pemilih foto Indonesia mendapat ring fokus 3 px; navigasi keyboard menunjukkan fokus. Dua tes komponen pemilih foto lulus; pemilihan file di Chrome agent tidak dapat diuji karena ekstensi belum diberi akses file lokal. Tidak ada submit atau perubahan DB. Rasio kontras pasangan teks utama/pendukung, tombol biru, navigasi gelap, dan status hijau semuanya ≥4,5:1. Reduced motion belum diemulasikan di browser. |
 
-Bukti API ada dalam [domain smoke](../../absen-be/test/domain.smoke.mjs), [outage smoke](../../absen-be/test/attendance-unavailable.smoke.mjs), dan tes unit di `absen-be/src/**/*.spec.ts`. Jangan menaruh credential, token, atau foto pribadi di dokumen bukti.
+Bukti API ada dalam [domain smoke](../../test/domain.smoke.mjs), [outage smoke](../../test/attendance-unavailable.smoke.mjs), dan tes unit di `absen-be/src/**/*.spec.ts`. Jangan menaruh credential, token, atau foto pribadi di dokumen bukti.
 
 ## Status task
 
@@ -46,6 +51,14 @@ Bukti API ada dalam [domain smoke](../../absen-be/test/domain.smoke.mjs), [outag
 | IMP-024 | Partially Implemented | README Inggris mandiri untuk kedua repo dan variabel/command diverifikasi EV-17; koleksi Postman auth/domain diperbarui untuk alur uji berurutan, identitas unik, fixture foto/hash, dan cleanup. Proof EV-09 lulus. | Jalankan koleksi pada Postman dan ulang setup dari clone baru dengan DB yang sudah terprovision; hentikan API sebelum `prisma generate` pada Windows. |
 | IMP-025 | Partially Implemented | EV-08 membuktikan demo browser HRD create → employee login/check-in/foto → HRD monitoring → HRD nonaktif → login ditolak; EV-05/06 membuktikan CRUD API dan service mati. | Hapus aktual dari UI, fault injection timeout setelah commit, serta Postman aktual belum diuji. |
 | IMP-026 | In Progress | Docs sinkron dan checklist mulai diisi berdasarkan EV. | Audit final tautan, secret, bukti, serta keputusan penyerahan. |
+
+## Perapian frontend dan sesi — 7 November 2026
+
+| Task | Status | Bukti | Sisa verifikasi |
+| --- | --- | --- | --- |
+| FE-001 — Format dan konvensi | Completed | EV-18: Prettier `printWidth: 100`, single quotes, tanpa semicolon; `format:check`, lint, dan build lulus. | — |
+| FE-002 — Sesi persisten | Partially Implemented | EV-18/19/20: IndexedDB menyimpan JWT dan `CryptoKey` non-exportable; 11 tes auth lulus. Refresh dua role, buka ulang tab HRD, dan logout lintas tab dengan API nyata lulus. JWT server tetap 30 menit; tidak ada refresh token atau revocation server. | Restart proses browser penuh, kedaluwarsa nyata 30 menit, dan gangguan jaringan `/me` di browser. |
+| FE-003 — Jarak filter dan redesign | Partially Implemented | CSS grid memakai `minmax(0, 1fr)`, kontrol `min-width: 0; width: 100%`, gap 20 px, dan aksi terpisah. Login lolos EV-18; monitoring/master/detail HRD lolos EV-19; beranda/riwayat/detail karyawan, pemilih foto, keyboard, dan kontras lolos EV-20. | Grid empat lebar untuk setiap layar, simulasi reduced motion, dan pemilihan file nyata di Chrome (izin ekstensi). |
 
 ## Risiko dan langkah berikutnya
 

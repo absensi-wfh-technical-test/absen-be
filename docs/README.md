@@ -1,6 +1,6 @@
 # Dokumentasi Produk Absensi WFH
 
-Dokumentasi ini adalah acuan implementasi aplikasi absensi WFH dan monitoring karyawan. Baca berurutan dari kebutuhan bisnis hingga spesifikasi antarmuka. Sumber kebutuhan adalah [PDF *Dexa Group - Fullstack Web Technical Test*](%2850%29%20Dexa%20Group%20-%20Fullstack%20Web%20Technical%20Test.pdf) dan keputusan arsitektur dicatat pada handoff 5 November 2026. Berkas handoff tidak tersedia di workspace saat ini. Sumber kebenaran struktur data adalah [`schema.prisma`](../absen-be/prisma/schema.prisma) dan migrasi awal di `../absen-be/prisma/migrations/`.
+Dokumentasi ini adalah acuan implementasi aplikasi absensi WFH dan monitoring karyawan. Baca berurutan dari kebutuhan bisnis hingga spesifikasi antarmuka. Sumber kebutuhan adalah PDF *Dexa Group - Fullstack Web Technical Test* (telah diaudit sebelumnya; berkas tidak tersedia di workspace saat ini) dan keputusan arsitektur dicatat pada handoff 5 November 2026. Berkas handoff tidak tersedia di workspace saat ini. Sumber kebenaran struktur data adalah [`schema.prisma`](../prisma/schema.prisma) dan migrasi awal di `../prisma/migrations/`.
 
 ## Aturan kerja sebelum implementasi
 

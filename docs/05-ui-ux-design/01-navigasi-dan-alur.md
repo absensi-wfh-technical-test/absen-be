@@ -86,4 +86,6 @@ Daftar absensi → pilih rentang tanggal dan filter opsional → HTTP API mengam
 | Sesi habis | Arahkan login, simpan tujuan navigasi bila aman; jangan pertahankan token lama. |
 | Data hilang (404) | Jelaskan data tidak ditemukan dan berikan kembali ke daftar. |
 
+**Pemulihan sesi:** Pada refresh atau browser dibuka kembali, tampilkan `Memeriksa sesi…` hingga JWT dan kunci proof persisten dipulihkan serta `/me` berhasil. Jangan arahkan sesaat ke login atau mengulang toast sukses. Jika jaringan tidak tersedia, tampilkan `Sesi belum dapat diverifikasi` dengan `Coba lagi` dan `Masuk ulang`; hanya aksi kedua membuang sesi lokal. JWT kedaluwarsa, kunci hilang, atau 401 mengarah ke login dengan pesan sesi berakhir. Masa hidup JWT tetap 30 menit.
+
 Rincian elemen tiap layar dan teks ada di [spesifikasi layar](02-spesifikasi-layar.md). Pola notifikasi setelah navigasi, interaksi, gerak, dan kedalaman visual dijabarkan di [umpan balik interaksi dan sistem visual](03-umpan-balik-interaksi-dan-sistem-visual.md).

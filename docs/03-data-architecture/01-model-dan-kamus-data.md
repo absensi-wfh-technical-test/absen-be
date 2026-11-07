@@ -1,6 +1,6 @@
 # 01 — Model Data dan Kamus Data
 
-Dokumen ini mendeskripsikan **keadaan yang sudah tertulis** dalam [`schema.prisma`](../../absen-be/prisma/schema.prisma) dan migrasi awal, bukan fitur runtime. DBMS: MySQL (target MySQL 8 menurut handoff arsitektur 5 November 2026); ORM: Prisma 6.19.0 sesuai `package.json`; nama tabel/kolom memakai `snake_case` melalui `@map`/`@@map`, properti Prisma memakai `camelCase`. Diagram ringkas yang sudah tersedia: [`database_relation.svg`](database_relation.svg). Diagram berikut menonjolkan kardinalitas; skema adalah sumber paling lengkap untuk tipe dan indeks.
+Dokumen ini mendeskripsikan **keadaan yang sudah tertulis** dalam [`schema.prisma`](../../prisma/schema.prisma) dan migrasi awal, bukan fitur runtime. DBMS: MySQL (target MySQL 8 menurut handoff arsitektur 5 November 2026); ORM: Prisma 6.19.0 sesuai `package.json`; nama tabel/kolom memakai `snake_case` melalui `@map`/`@@map`, properti Prisma memakai `camelCase`. Diagram ringkas yang sudah tersedia: [`database_relation.svg`](database_relation.svg). Diagram berikut menonjolkan kardinalitas; skema adalah sumber paling lengkap untuk tipe dan indeks.
 
 ```mermaid
 erDiagram

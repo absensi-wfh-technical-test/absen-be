@@ -1,6 +1,6 @@
 # 03 — Umpan Balik Interaksi dan Sistem Visual
 
-Dokumen ini adalah **[Rancangan]** untuk perilaku antarmuka `UI-01`–`UI-08`. Ia melengkapi [navigasi dan alur](01-navigasi-dan-alur.md) serta [spesifikasi layar](02-spesifikasi-layar.md). Kebutuhan bisnis dan respons API tetap mengikuti dokumen terkait; pola visual di sini tidak boleh membuat klaim sukses sebelum respons atau data tersimpan diverifikasi. Per 6 November 2026, UI login dan logout sudah tersedia, tetapi pola notifikasi, transisi, dan penyempurnaan visual berikut **belum dinyatakan terimplementasi**.
+Dokumen ini menetapkan perilaku antarmuka `UI-01`–`UI-08` dan arah redesign 7 November 2026. Ia melengkapi [navigasi dan alur](01-navigasi-dan-alur.md) serta [spesifikasi layar](02-spesifikasi-layar.md). Kebutuhan bisnis dan respons API tetap mengikuti dokumen terkait; pola visual tidak boleh membuat klaim sukses sebelum respons atau data tersimpan diverifikasi. Status implementasi dan bukti mengikuti [progres](../06-implementation-planning/07-implementation-progress.md).
 
 ## Prinsip pengalaman
 
@@ -21,6 +21,7 @@ Dokumen ini adalah **[Rancangan]** untuk perilaku antarmuka `UI-01`–`UI-08`. I
 | Aktif/nonaktif karyawan `UI-05` (`FR-09`, P1) | Dialog menyebut akibatnya; tombol konfirmasi menunjukkan proses. | Ubah badge status yang terlihat persisten, lalu notifikasi misalnya `Akun karyawan dinonaktifkan.` | Dialog tetap terbuka atau kembali ke detail dengan penjelasan gagal; status lama tidak diubah secara optimistis. |
 | Filter/list/detail `UI-03`, `UI-04`, `UI-06`, `UI-07` | Loading lokal pada area data; filter dan konteks navigasi tetap terlihat. | Hasil, jumlah, filter aktif, dan detail yang dimuat menjadi sumber informasi utama; tidak perlu toast untuk pembacaan rutin. | Empty state membedakan belum ada data dan tidak ada hasil filter. Kegagalan memuat memberi `Coba lagi` tanpa mereset filter; foto gagal tidak menyembunyikan metadata. |
 | Sesi habis / tidak berizin `UI-08` | Hentikan aksi yang memerlukan sesi dan bersihkan token serta kunci proof. | — | Sesi habis: arahkan ke login dengan pesan **persisten** `Sesi Anda berakhir. Silakan masuk kembali.` 403: tampilkan halaman akses ditolak dengan jalan kembali, bukan toast yang hilang sendiri. |
+| Pemulihan sesi setelah refresh/browser dibuka lagi | Tampilkan `Memeriksa sesi…` tanpa form login atau redirect sementara. | Setelah `/me` valid, tampilkan route sesuai role tanpa toast login baru. | Jaringan gagal: pertahankan record dan tawarkan `Coba lagi`/`Masuk ulang`. Token/kunci hilang, kedaluwarsa, atau 401: hapus record dan tampilkan login dengan pesan sesi berakhir. |
 
 ### Perilaku notifikasi sesaat
 
@@ -33,12 +34,14 @@ Dokumen ini adalah **[Rancangan]** untuk perilaku antarmuka `UI-01`–`UI-08`. I
 
 ## Sistem visual yang memberi karakter
 
-Gunakan token dasar pada [spesifikasi layar](02-spesifikasi-layar.md#komponen-dan-bahasa-visual), lalu kembangkan konsisten sebagai berikut. Nilai di bawah adalah acuan desain awal, bukan klaim bahwa CSS sekarang sudah memakainya.
+Gunakan token dasar pada [spesifikasi layar](02-spesifikasi-layar.md#komponen-dan-bahasa-visual), lalu kembangkan konsisten sebagai berikut. Token utama telah diterapkan di CSS frontend; kecocokan setiap keadaan layar tetap harus diverifikasi di browser.
+
+Redesign memakai shell desktop dengan navigasi samping ringkas, identitas pengguna di bagian bawah sidebar, dan konten maksimal sekitar 1250 px. Ponsel memakai header dan tab navigasi yang tidak tersembunyi; fokus, label, dan urutan baca tetap logis. Login desktop memakai panel identitas produk serta form yang dominan, lalu menjadi satu kolom di ponsel. Gunakan ikon garis dan motif geometris sederhana secara konsisten. Panel status, waktu, foto, hasil filter, dan aksi utama mendapat aksen; kartu informasi biasa tidak semuanya diberi warna atau bayangan kuat. Filter memakai grid `minmax(0, 1fr)`, kontrol `min-width: 0; width: 100%`, serta jarak horizontal minimal 16 px.
 
 | Unsur | Aturan rancangan | Tujuan |
 | --- | --- | --- |
 | Tipografi | Skala judul halaman sekitar `28–32px`, judul kartu `20–24px`, isi `16px`, label/meta `13–14px`; berat dan tinggi baris dibedakan jelas. | Beranda langsung memandu mata ke status dan tindakan utama. |
-| Permukaan | Latar netral terang; kartu putih dengan border halus, radius konsisten `12–16px`, bayangan ringan hanya pada elemen yang perlu diangkat. | Memberi kedalaman tanpa membanjiri halaman dengan kotak serupa. |
+| Permukaan | Latar netral terang; kartu putih dengan border halus, radius utama `18px`, bayangan ringan hanya pada elemen yang perlu diangkat. | Memberi kedalaman tanpa membanjiri halaman dengan kotak serupa. |
 | Aksen | Biru utama untuk satu CTA primer per konteks, hijau untuk berhasil, merah untuk kesalahan/aksi berisiko, warna lembut untuk panel informasi. Ikon pendukung memakai satu gaya yang konsisten. | Prioritas mudah dikenali tanpa bergantung pada warna saja. |
 | Ruang | Sistem jarak kelipatan `4px`; antarbagian utama lebih longgar daripada jarak antarlabel dan input. Lebar konten dibatasi agar form dan tabel mudah dibaca. | Layar terasa lapang dan terstruktur, bukan kosong atau padat. |
 | Keadaan kontrol | Hover/focus/pressed/disabled jelas. Focus ring terlihat di atas warna permukaan; disabled tetap terbaca dan disertai alasan bila membingungkan. | Antarmuka terasa responsif dan dapat dipakai keyboard. |

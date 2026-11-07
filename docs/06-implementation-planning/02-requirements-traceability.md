@@ -1,6 +1,6 @@
 # Requirements Traceability Matrix
 
-`DG-*` memetakan setiap butir objektif/use case eksplisit pada [PDF assessment](../%2850%29%20Dexa%20Group%20-%20Fullstack%20Web%20Technical%20Test.pdf). Tenggat di PDF adalah konteks penugasan historis, bukan pengganti bukti teknis. `FR/AC` tambahan adalah keputusan proyek, bukan kutipan PDF. Kode bukti `EV-*` dijelaskan di [progres](07-implementation-progress.md).
+`DG-*` memetakan setiap butir objektif/use case eksplisit pada PDF assessment (telah diaudit sebelumnya; berkas tidak tersedia di workspace saat ini). Tenggat di PDF adalah konteks penugasan historis, bukan pengganti bukti teknis. `FR/AC` tambahan adalah keputusan proyek, bukan kutipan PDF. Kode bukti `EV-*` dijelaskan di [progres](07-implementation-progress.md).
 
 | PDF ID | Kewajiban PDF | Jejak dokumen | Implementasi aktual | Task | Bukti dan status 6 Nov 2026 |
 | --- | --- | --- | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Current State Audit dan Gap Analysis
 
-Audit source dan dokumen dilakukan 6 November 2026. Sumber assessment adalah [PDF satu halaman](../%2850%29%20Dexa%20Group%20-%20Fullstack%20Web%20Technical%20Test.pdf). Status: **Completed** = perilaku dan tes relevan lulus; **Partially Implemented** = ada bagian kode; **Not Implemented** = alur tidak ada; **Needs Verification** = kode ada tetapi bukti runtime kurang; **Blocked** = prasyarat lingkungan menghalangi verifikasi.
+Audit source dan dokumen dilakukan 6 November 2026. Sumber assessment adalah PDF satu halaman (telah diaudit sebelumnya; berkas tidak tersedia di workspace saat ini). Status: **Completed** = perilaku dan tes relevan lulus; **Partially Implemented** = ada bagian kode; **Not Implemented** = alur tidak ada; **Needs Verification** = kode ada tetapi bukti runtime kurang; **Blocked** = prasyarat lingkungan menghalangi verifikasi.
 
 | Area | Status | Bukti saat audit | Gap / dependency |
 | --- | --- | --- | --- |

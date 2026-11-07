@@ -6,17 +6,24 @@ ID layar `UI-*` mengacu pada route di [navigasi](01-navigasi-dan-alur.md). Detai
 
 **Arah visual [Rancangan]:** antarmuka kerja yang tenang, bersih, dan kredibel. Latar netral terang; warna aksen biru untuk tindakan utama; hijau untuk berhasil; merah untuk kesalahan/destruktif. Gunakan satu keluarga font sans-serif sistem, ukuran dasar 16 px, hierarki judul konsisten, ruang kosong yang cukup, dan angka tanggal/jam mudah dibaca. Jangan memakai warna saja untuk menyampaikan status.
 
-| Token awal | Nilai usulan | Pemakaian |
+**Arah redesign [Keputusan 7 November 2026]:** *operational workspace* dengan latar biru keabu-abuan lembut, navigasi samping ringkas pada desktop dan tab navigasi yang jelas pada ponsel. Permukaan putih dipakai untuk area kerja, panel biru muda untuk konteks, dan aksen hijau terbatas pada status kehadiran. Judul, angka, label, dan tindakan utama membentuk hierarki; ikon garis satu gaya membantu pemindaian tanpa menggantikan teks. Gunakan ilustrasi geometris CSS/SVG yang ringan, bukan foto dekoratif atau metrik buatan. Pertahankan route, izin, dan data API yang sudah disepakati.
+
+| Token visual | Nilai implementasi | Pemakaian |
 | --- | --- | --- |
-| `color.text` | `#0F172A` | Teks utama. |
-| `color.muted` | `#475569` | Teks pendukung. |
+| `color.text` | `#172033` | Teks utama. |
+| `color.muted` | `#536278` | Teks pendukung. |
 | `color.primary` | `#1D4ED8` | Tombol/tautan utama. |
 | `color.success` | `#166534` | Status berhasil. |
 | `color.error` | `#B91C1C` | Error dan tindakan berisiko. |
 | `color.surface` | `#FFFFFF` | Kartu/form. |
-| `color.background` | `#F8FAFC` | Latar halaman. |
-| `radius.control` | `8px` | Input/tombol. |
-| `spacing` | Kelipatan `4px` | Jarak internal dan antarbagian. |
+| `color.canvas` | `#F4F7FB` | Latar halaman. |
+| `color.border` | `#DCE5F0` | Garis pembatas. |
+| `color.accent` | `#0F766E` | Aksen pendukung terbatas. |
+| `radius.control` | `10px` | Input/tombol. |
+| `radius.card` | `18px` | Kartu area kerja. |
+| `spacing` | `8/12/16/24/32px` | Jarak internal dan antarbagian. |
+
+Pastikan kontras teks dan keadaan fokus diuji pada kombinasi warna aktual. Kartu tidak semuanya memerlukan bayangan; kedalaman dipakai untuk status, form, dan dialog yang perlu diprioritaskan.
 
 Sebelum implementasi visual final, periksa kontras nyata pada semua kombinasi teks/latar dan keadaan fokus. Foto adalah konten, bukan dekorasi; sediakan keterangan yang berarti. Tabel HRD dapat berubah menjadi kartu pada viewport sempit tanpa menghilangkan informasi penting.
 
@@ -24,11 +31,15 @@ Sebelum implementasi visual final, periksa kontras nyata pada semua kombinasi te
 
 ### UI-01 — Login (`/login`)
 
-**Tujuan:** mengautentikasi dua role. **Isi:** judul “Masuk ke Absensi WFH”, label Email, Kata sandi, tombol Masuk, indikator proses. Password dapat ditampilkan/disembunyikan dengan kontrol berlabel. **Validasi:** email wajib/format, kata sandi wajib; error server generik “Email atau kata sandi tidak sesuai, atau akun tidak aktif.” **Berhasil:** setelah identitas `/me` terverifikasi, navigasi ke `/app` atau `/admin/absensi` dengan notifikasi sambutan singkat di halaman tujuan. **Logout:** setelah sesi lokal dibersihkan, kembali ke `/login` dengan notifikasi hasil yang sesuai keadaan API. Pola pesan dan masa tampil mengikuti [spesifikasi umpan balik](03-umpan-balik-interaksi-dan-sistem-visual.md#pola-umpan-balik-per-aksi). Tidak ada tautan “Daftar” atau “Lupa kata sandi” bila alurnya belum tersedia.
+**Tujuan:** mengautentikasi dua role. **Isi:** judul “Masuk ke akun Anda”, label Email, Kata sandi, tombol Masuk, indikator proses. Password dapat ditampilkan/disembunyikan dengan kontrol berlabel. **Validasi:** email wajib/format, kata sandi wajib; error server generik “Email atau kata sandi tidak sesuai, atau akun tidak aktif.” **Berhasil:** setelah identitas `/me` terverifikasi, navigasi ke `/app` atau `/admin/absensi` dengan notifikasi sambutan singkat di halaman tujuan. **Logout:** setelah sesi lokal dibersihkan, kembali ke `/login` dengan notifikasi hasil yang sesuai keadaan API. Pola pesan dan masa tampil mengikuti [spesifikasi umpan balik](03-umpan-balik-interaksi-dan-sistem-visual.md#pola-umpan-balik-per-aksi). Tidak ada tautan “Daftar” atau “Lupa kata sandi” bila alurnya belum tersedia.
+
+**Komposisi baru:** desktop memakai panel identitas produk dengan motif jam abstrak dan panel form yang fokus; ponsel memakai header merek serta form satu kolom, tanpa motif dekoratif. Pemulihan sesi menampilkan layar status tersendiri sebelum keputusan route, bukan form login sesaat.
 
 ### UI-02 — Beranda/check-in karyawan (`/app`)
 
 **Tujuan:** menjawab status hari ini dan menyelesaikan check-in. **Header:** sapaan nama, tanggal bisnis dalam bahasa Indonesia, zona waktu. **Belum absen:** instruksi singkat, input foto dengan tombol “Pilih foto” (opsi kamera bila browser mendukung), pratinjau, nama/ukuran berkas, tombol “Kirim absensi”. **Sudah absen:** panel sukses persisten berisi tanggal, jam, foto/tautan detail; tombol check-in tidak tersedia. Pemilik dapat mengganti foto atau menghapus absensi hari ini setelah konfirmasi; jam/tanggal asli tetap saat foto diganti, dan setelah hapus check-in ulang tersedia. **Mengirim:** progres/label “Mengirim absensi…”, cegah submit ganda. **Error:** dekat input untuk format/ukuran; banner untuk jaringan/storage/service attendance. Upload terjadi di HTTP API, sedangkan waktu resmi ditentukan microservice; UI tidak menampilkan waktu perangkat sebagai waktu resmi check-in.
+
+**Komposisi baru:** status dan jam resmi menjadi panel hero; modul foto/aksi utama berada tepat setelahnya. Riwayat atau petunjuk singkat menjadi sekunder. Tidak tampilkan angka kehadiran yang tidak disediakan API.
 
 ### UI-03 — Riwayat pribadi (`/app/riwayat`)
 
@@ -38,6 +49,8 @@ Sebelum implementasi visual final, periksa kontras nyata pada semua kombinasi te
 
 **Tujuan:** mencari dan mengelola master. **Isi:** judul, tombol “Tambah karyawan”, pencarian nama/kode/email, filter status/departemen bila tersedia, tabel/kartu berisi kode, nama, departemen, jabatan, email, status, aksi “Lihat/Ubah”. **Kosong:** bedakan belum ada data dari tak ada hasil filter. **Status:** label Aktif/Nonaktif berbentuk teks dan warna. **Pagination:** pertahankan parameter saat pindah halaman.
 
+**Komposisi baru:** toolbar filter dalam grid yang tidak membiarkan input/select meluber ke kolom tetangga; jumlah hasil dan filter aktif jelas. Aksi Terapkan/Reset tetap berjarak dari field. Baris data dapat berubah menjadi kartu ringkas di ponsel.
+
 ### UI-05 — Tambah/ubah karyawan (`/admin/karyawan/baru`, `/admin/karyawan/:id`)
 
 **Tujuan:** menjaga integritas data master. **Form tambah:** kode karyawan, nama lengkap, email, kata sandi awal, departemen, jabatan; nomor telepon dan tanggal bergabung opsional. **Form ubah:** profil yang dapat diubah; password hash/password lama tidak pernah tampil. **Aksi:** Simpan, Batal, dan pada detail ada Aktifkan/Nonaktifkan dengan konfirmasi. **Validasi:** wajib, panjang sesuai skema, kode/email unik, master aktif. **Error konflik:** tunjuk field terkait tanpa menghapus isian lain. Saat pindah dari form yang berubah tanpa simpan melalui tautan aplikasi, Back browser, atau Keluar, tampilkan dialog aplikasi dengan pilihan Tetap di form/Tinggalkan halaman. Penutupan atau pemuatan ulang tab memakai peringatan bawaan browser.
@@ -45,6 +58,8 @@ Sebelum implementasi visual final, periksa kontras nyata pada semua kombinasi te
 ### UI-06 — Monitoring absensi (`/admin/absensi`)
 
 **Tujuan:** memantau bukti check-in. **Isi:** rentang tanggal (default hari ini sebagai **[Rancangan]**), pencarian karyawan, filter departemen, tombol Terapkan/Reset, total hasil, daftar tanggal, jam, kode/nama karyawan, departemen, indikator foto, aksi “Lihat detail”. **Urutan:** terbaru dahulu. **Kosong:** “Tidak ada absensi untuk filter ini” dan aksi reset. **Gangguan service:** pesan sementara dan Coba lagi tanpa menghapus filter; menu Karyawan tetap berfungsi. **Batas akses:** tidak ada aksi ubah/hapus absensi. Filter tetap tersimpan saat kembali dari detail.
+
+**Komposisi baru:** ringkasan hasil memakai `meta.total` untuk filter aktif, lalu filter dan daftar yang mudah dipindai. Pencarian dan departemen memiliki jarak horizontal minimal 16 px pada desktop; pada ponsel menjadi satu kolom tanpa overflow. Jangan menampilkan tingkat kehadiran atau jumlah absen yang tidak dapat dihitung dari kontrak API saat ini.
 
 ### UI-07 — Detail absensi (`/app/riwayat/:id`, `/admin/absensi/:id`)
 
